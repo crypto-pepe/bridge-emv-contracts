@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/Multisig.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.7;\n\ncontract Multisig {\n    struct Transaction {\n        address dst;\n        uint256 value;\n        bytes data;\n        bool isExecuted;\n        uint256 blockNumber;\n    }\n\n    uint8 public quorum;\n    uint128 public ttl;\n    mapping(uint256 => Transaction) public txs;\n    uint256 public txsCount;\n    mapping(uint256 => mapping(address => bool)) public confirms;\n    mapping(address => bool) public isOwner;\n    address[] public owners;\n\n    event Submission(uint256 indexed txId);\n    event Confirmation(address indexed sender, uint256 indexed txId);\n    event Revocation(address indexed sender, uint256 indexed txId);\n    event Execution(uint256 indexed txId);\n    event QuorumChange(uint8 quorum);\n    event OwnerAddition(address indexed owner);\n    event OwnerRemoval(address indexed owner);\n\n    modifier onlySelf() {\n        require(msg.sender == address(this), \"only self\");\n        _;\n    }\n\n    modifier onlyOwner(address owner_) {\n        require(isOwner[owner_], \"only owner\");\n        _;\n    }\n\n    modifier whenNotConfirmed(uint256 txId_, address owner_) {\n        require(!confirms[txId_][owner_], \"tx is confirmed\");\n        _;\n    }\n\n    modifier whenNotExecuted(uint256 txId) {\n        require(!txs[txId].isExecuted, \"tx is executed\");\n        _;\n    }\n\n    modifier quorumIsValid(uint8 ownersCount_, uint8 quorum_) {\n        require(\n            quorum_ <= ownersCount_ && quorum_ != 0 && ownersCount_ != 0,\n            \"invalid quorum\"\n        );\n        _;\n    }\n\n    constructor(\n        address[] memory owners_,\n        uint8 quorum_,\n        uint128 ttl_\n    ) quorumIsValid(uint8(owners_.length), quorum_) {\n        for (uint8 i = 0; i < owners_.length; i++) {\n            address owner = owners_[i];\n            require(owner != address(0), \"zero address\");\n            require(!isOwner[owner], \"owner is duplicated\");\n            isOwner[owner] = true;\n        }\n\n        owners = owners_;\n        quorum = quorum_;\n        ttl = ttl_;\n    }\n\n    receive() external payable {}\n\n    function addOwner(address owner_)\n        external\n        onlySelf\n        quorumIsValid(uint8(owners.length + 1), quorum)\n    {\n        require(owner_ != address(0), \"zero address\");\n        require(!isOwner[owner_], \"only not owner\");\n        isOwner[owner_] = true;\n        owners.push(owner_);\n        emit OwnerAddition(owner_);\n    }\n\n    function removeOwner(address owner_) external onlySelf onlyOwner(owner_) {\n        isOwner[owner_] = false;\n        for (uint8 i = 0; i < owners.length - 1; i++) {\n            if (owners[i] == owner_) {\n                owners[i] = owners[owners.length - 1];\n                break;\n            }\n        }\n        owners.pop();\n        if (quorum > owners.length) {\n            setQuorum(uint8(owners.length));\n        }\n        emit OwnerRemoval(owner_);\n    }\n\n    function setQuorum(uint8 quorum_)\n        public\n        onlySelf\n        quorumIsValid(uint8(owners.length), quorum_)\n    {\n        quorum = quorum_;\n        emit QuorumChange(quorum_);\n    }\n\n    function submitTransaction(\n        address dst_,\n        uint256 value_,\n        bytes calldata calldata_\n    ) external onlyOwner(msg.sender) returns (uint256 txId) {\n        require(dst_ != address(0), \"zero address\");\n        txId = txsCount;\n        txs[txId] = Transaction({\n            dst: dst_,\n            value: value_,\n            data: calldata_,\n            isExecuted: false,\n            blockNumber: block.number\n        });\n        txsCount = txId + 1;\n        emit Submission(txId);\n    }\n\n    function confirmTransaction(uint256 txId_)\n        external\n        onlyOwner(msg.sender)\n        whenNotConfirmed(txId_, msg.sender)\n    {\n        require(txs[txId_].dst != address(0), \"txId is incorrect\");\n        confirms[txId_][msg.sender] = true;\n        emit Confirmation(msg.sender, txId_);\n    }\n\n    function revokeConfirmation(uint256 txId_)\n        external\n        onlyOwner(msg.sender)\n        whenNotExecuted(txId_)\n    {\n        require(confirms[txId_][msg.sender], \"tx is not confirmed\");\n        confirms[txId_][msg.sender] = false;\n        emit Revocation(msg.sender, txId_);\n    }\n\n    function executeTransaction(uint256 txId_) external whenNotExecuted(txId_) {\n        require(isConfirmed(txId_), \"is not confirmed\");\n        Transaction storage tx_ = txs[txId_];\n        require(tx_.blockNumber + ttl >= block.number, \"tx too old\");\n        tx_.isExecuted = true;\n        emit Execution(txId_);\n        (bool success, ) = tx_.dst.call{value: tx_.value}(tx_.data);\n        require(success, \"execution failure\");\n    }\n\n    function isConfirmed(uint256 txId_) public view returns (bool) {\n        uint8 count = 0;\n        for (uint8 i = 0; i < owners.length; i++) {\n            if (confirms[txId_][owners[i]]) count++;\n            if (count == quorum) return true;\n        }\n\n        return false;\n    }\n\n    function getConfirmationsCount(uint256 txId_)\n        external\n        view\n        returns (uint8 count)\n    {\n        for (uint8 i = 0; i < owners.length; i++)\n            if (confirms[txId_][owners[i]]) count++;\n    }\n\n    function getConfirmations(uint256 txId_)\n        external\n        view\n        returns (address[] memory confirms_)\n    {\n        uint8 i = 0;\n        uint8 count = 0;\n        address[] memory tmp = new address[](owners.length);\n        for (; i < owners.length; i++) {\n            address owner = owners[i];\n            if (confirms[txId_][owner]) {\n                tmp[count] = owner;\n                count++;\n            }\n        }\n\n        confirms_ = new address[](count);\n        for (i = 0; i < count; i++) confirms_[i] = tmp[i];\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

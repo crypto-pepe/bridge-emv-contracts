@@ -1,7 +1,21 @@
 {
-  "name": "evm-contracts",
+  "name": "bridge-evm-contracts",
+  "version": "0.0.1",
   "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.6",
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
-    "hardhat": "^2.10.1"
+    "@nomiclabs/hardhat-solhint": "^2.0.1",
+    "chai-as-promised": "^7.1.1",
+    "hardhat": "^2.10.1",
+    "hardhat-deploy": "^0.11.15",
+    "hardhat-gas-reporter": "^1.0.8",
+    "mocha-junit-reporter": "^2.0.2"
+  },
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "check": "hardhat check",
+    "coverage": "hardhat coverage",
+    "typechain": "hardhat typechain",
+    "test": "hardhat test"
   }
 }
