@@ -9,7 +9,7 @@ import {
   setQuorumEncode,
 } from "../steps/multisig";
 import { BigNumber } from "ethers";
-import { deployMultisigFixtureManyOwners } from '../steps/multisig.fixtures'
+import { deployMultisigFixtureManyOwners } from "../steps/multisig.fixtures";
 
 describe("Multisig integration tests", () => {
   it("should throw when try execute method without confirmation", async () => {
@@ -218,7 +218,7 @@ describe("Multisig integration tests", () => {
         multisig.interface.encodeFunctionData("addOwner", [third.address]),
         BigNumber.from(0n),
         trashTx
-      )  
+      )
     ).to.be.revertedWith("only owner");
   });
 

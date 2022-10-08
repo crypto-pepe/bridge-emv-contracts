@@ -99,7 +99,9 @@ describe("Multisig", () => {
         deployMultisigFixtureOneOwner
       );
       await expect(
-        multisig.connect(other).submitTransaction(other.address, 0, setQuorumEncode(multisig))
+        multisig
+          .connect(other)
+          .submitTransaction(other.address, 0, setQuorumEncode(multisig))
       ).to.be.revertedWith("only owner");
     });
 
@@ -249,7 +251,9 @@ describe("Multisig", () => {
     });
 
     it("can execute transaction when block height is equals TTL", async () => {
-      const { Multisig, owner } = await loadFixture(deployMultisigFixtureOneOwner);
+      const { Multisig, owner } = await loadFixture(
+        deployMultisigFixtureOneOwner
+      );
       const multisig = await Multisig.deploy([owner.address], 1, 2); // because on execute block number added on 1
       const startTxId = await multisig.txsCount();
       await expectSubmitTransaction(
@@ -268,8 +272,10 @@ describe("Multisig", () => {
       expect(afterTx.isExecuted).is.true;
     });
 
-    it("should throw when block\'s height more than TTL", async () => {
-      const { Multisig, owner } = await loadFixture(deployMultisigFixtureOneOwner);
+    it("should throw when block's height more than TTL", async () => {
+      const { Multisig, owner } = await loadFixture(
+        deployMultisigFixtureOneOwner
+      );
       const multisig = await Multisig.deploy([owner.address], 1, 1);
       const startTxId = await multisig.txsCount();
       await expectSubmitTransaction(
