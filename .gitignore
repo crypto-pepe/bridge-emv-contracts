@@ -9,7 +9,6 @@ typechain-types
 cache
 artifacts
 
-
 node_modules
 .env
 coverage
@@ -21,3 +20,9 @@ typechain-types
 cache
 artifacts
 
+allure-results/
+allure-reports/
+audit/
+
+contracts-exposed/
+deployments/

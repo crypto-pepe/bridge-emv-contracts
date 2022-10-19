@@ -1,0 +1,25 @@
+{
+    "claim_reward": [
+        {
+            "name": "zero value",
+            "data": {
+                "amount": 3210000,
+                "reward": 0
+            }
+        },
+        {
+            "name": "equal with amount values",
+            "data": {
+                "amount": 3210000,
+                "reward": 3210000
+            }
+        },
+        {
+            "name": "bigger than amount",
+            "data": {
+                "amount": 3210000,
+                "reward": 3210001
+            }
+        }
+    ]
+}

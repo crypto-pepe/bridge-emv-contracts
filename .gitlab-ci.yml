@@ -1,4 +1,7 @@
 include:
+  - project: "pepe-team/common/ci"
+    ref: master
+    file: "/ci-functions/hardhat.yml"
   - project: 'pepe-team/common/ci'
     ref: master
     file: '/ci-functions/publish-github.yml'
@@ -7,5 +10,5 @@ variables:
   CI_GITHUB_REPO: "github.com/crypto-pepe/bridge-emv-contracts.git"
 
 stages:
+  - "Hardhat"
   - 'Publish to GitHub'
-
